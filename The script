@@ -1,6 +1,6 @@
 (function () {
   if (document.getElementById('customMenu')) {
-    alert('Menu bestaat al!');
+    alert('This Menu already exists');
     return;
   }
 
