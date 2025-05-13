@@ -82,14 +82,20 @@
 
   const buttonsContainer = document.getElementById('customMenuButtons');
 
-  // 40 knoppen toevoegen
-  for (let i = 1; i <= 50; i++) {
-    const btn = document.createElement('button');
-    btn.className = 'menuButton';
-    btn.textContent = 'Knop ' + i;
-    btn.id = 'menuBtn' + i;
-    buttonsContainer.appendChild(btn);
-  }
+const knopNamen = [
+  "Snake", "Tetris", "Flappy bird", "Pac man", "Reaction time",
+  "click test", "Series Memory", "10 targets", "Stop at 10 sec", "Dino game"
+  // voeg hier tot max 50 namen toe
+];
+
+for (let i = 1; i <= 50; i++) {
+  const btn = document.createElement('button');
+  btn.className = 'menuButton';
+  btn.textContent = knopNamen[i - 1] || 'Knop ' + i;  // gebruik naam of standaardtekst
+  btn.id = 'menuBtn' + i;
+  buttonsContainer.appendChild(btn);
+}
+
 
   // Minimaliseer/maximaliseer
   let isMinimized = false;
