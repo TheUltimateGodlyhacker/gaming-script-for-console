@@ -31,11 +31,13 @@
       border-top-right-radius: 6px;
     }
     #customMenuButtons {
-      display: flex;
-      flex-wrap: wrap;
-      padding: 10px;
-      gap: 5px;
-    }
+  display: flex;
+  flex-wrap: wrap;
+  padding: 10px;
+  gap: 5px;
+  max-height: 300px;  /* of een waarde die past bij je layout */
+  overflow-y: auto;
+}
     .menuButton {
       flex: 1 0 30%;
       padding: 6px;
