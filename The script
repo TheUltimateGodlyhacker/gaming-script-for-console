@@ -1,1 +1,120 @@
+(function () {
+  if (document.getElementById('customMenu')) {
+    alert('Menu bestaat al!');
+    return;
+  }
 
+  // CSS toevoegen
+  const style = document.createElement('style');
+  style.textContent = `
+    #customMenu {
+      position: fixed;
+      top: 100px;
+      left: 100px;
+      width: 320px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      border-radius: 6px;
+      font-family: sans-serif;
+      z-index: 9999;
+    }
+    #customMenuHeader {
+      background: #444;
+      color: white;
+      padding: 10px;
+      cursor: move;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+    }
+    #customMenuButtons {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+      gap: 5px;
+    }
+    .menuButton {
+      flex: 1 0 30%;
+      padding: 6px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .menuButton:hover {
+      background: #0056b3;
+    }
+    #toggleMenu {
+      background: #666;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    canvas#snakeCanvas {
+      display: block;
+      margin: 10px auto;
+      border: 2px solid #333;
+      background: #000;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Menu bouwen
+  const menu = document.createElement('div');
+  menu.id = 'customMenu';
+  menu.innerHTML = `
+    <div id="customMenuHeader">
+      <span>Menu</span>
+      <button id="toggleMenu">−</button>
+    </div>
+    <div id="customMenuButtons"></div>
+  `;
+  document.body.appendChild(menu);
+
+  const buttonsContainer = document.getElementById('customMenuButtons');
+
+  // 40 knoppen toevoegen
+  for (let i = 1; i <= 50; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'menuButton';
+    btn.textContent = 'Knop ' + i;
+    btn.id = 'menuBtn' + i;
+    buttonsContainer.appendChild(btn);
+  }
+
+  // Minimaliseer/maximaliseer
+  let isMinimized = false;
+  document.getElementById('toggleMenu').onclick = function () {
+    isMinimized = !isMinimized;
+    buttonsContainer.style.display = isMinimized ? 'none' : 'flex';
+    this.textContent = isMinimized ? '+' : '−';
+  };
+
+  // Sleepfunctionaliteit
+  const header = document.getElementById('customMenuHeader');
+  let isDragging = false, offsetX, offsetY;
+
+  header.addEventListener('mousedown', function (e) {
+    isDragging = true;
+    offsetX = e.clientX - menu.offsetLeft;
+    offsetY = e.clientY - menu.offsetTop;
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (isDragging) {
+      menu.style.left = e.clientX - offsetX + 'px';
+      menu.style.top = e.clientY - offsetY + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', function () {
+    isDragging = false;
+  });
+})();
