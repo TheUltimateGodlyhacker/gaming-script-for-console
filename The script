@@ -447,3 +447,167 @@
     });
   });
 })();
+(function () {
+  const pongBtn = document.getElementById('menuBtn3');
+  if (!pongBtn) {
+    console.error("Knop 'menuBtn3' niet gevonden.");
+    return;
+  }
+
+  pongBtn.addEventListener('click', () => {
+    if (document.getElementById('pongWindow')) return;
+
+    const win = document.createElement('div');
+    win.id = 'pongWindow';
+    win.style.cssText = `
+      position: fixed;
+      top: 120px;
+      left: 120px;
+      width: 420px;
+      background: #111;
+      color: white;
+      border: 2px solid #333;
+      border-radius: 8px;
+      z-index: 10000;
+      font-family: sans-serif;
+    `;
+
+    win.innerHTML = `
+      <div id="pongHeader" style="padding: 10px; background: #222; cursor: move;">
+        <strong>Pong</strong>
+        <button id="closePong" style="float:right; background:#900; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">X</button>
+      </div>
+      <div style="padding: 10px; text-align: center;">
+        <div id="pongStartScreen">
+          <h2>Kies spelmodus</h2>
+          <button id="singlePlayerBtn">1 Player</button>
+          <button id="multiPlayerBtn">2 Players</button>
+        </div>
+        <canvas id="pongCanvas" width="400" height="300" style="display:none; background:black;"></canvas>
+      </div>
+    `;
+    document.body.appendChild(win);
+
+    let isDragging = false, offsetX, offsetY;
+    const header = document.getElementById('pongHeader');
+    header.addEventListener('mousedown', function (e) {
+      isDragging = true;
+      offsetX = e.clientX - win.offsetLeft;
+      offsetY = e.clientY - win.offsetTop;
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (isDragging) {
+        win.style.left = e.clientX - offsetX + 'px';
+        win.style.top = e.clientY - offsetY + 'px';
+      }
+    });
+    document.addEventListener('mouseup', function () {
+      isDragging = false;
+    });
+
+    const canvas = document.getElementById('pongCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let paddleHeight = 50;
+    let paddleY = (canvas.height - paddleHeight) / 2;
+    let rightPaddleY = (canvas.height - paddleHeight) / 2;
+    let ballX = canvas.width / 2;
+    let ballY = canvas.height / 2;
+    let ballRadius = 5;
+    let dx = 2;
+    let dy = 2;
+
+    let upPressed = false;
+    let downPressed = false;
+    let rightUpPressed = false;
+    let rightDownPressed = false;
+
+    let multiplayer = false;
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'w' || e.key === 'W') upPressed = true;
+      if (e.key === 's' || e.key === 'S') downPressed = true;
+      if (multiplayer) {
+        if (e.key === 'ArrowUp') rightUpPressed = true;
+        if (e.key === 'ArrowDown') rightDownPressed = true;
+      }
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key === 'w' || e.key === 'W') upPressed = false;
+      if (e.key === 's' || e.key === 'S') downPressed = false;
+      if (multiplayer) {
+        if (e.key === 'ArrowUp') rightUpPressed = false;
+        if (e.key === 'ArrowDown') rightDownPressed = false;
+      }
+    });
+
+    function drawPaddle(x, y) {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(x, y, 10, paddleHeight);
+    }
+
+    function drawBall() {
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPaddle(10, paddleY);
+      drawPaddle(canvas.width - 20, rightPaddleY);
+      drawBall();
+
+      if (upPressed && paddleY > 0) paddleY -= 4;
+      if (downPressed && paddleY < canvas.height - paddleHeight) paddleY += 4;
+
+      if (multiplayer) {
+        if (rightUpPressed && rightPaddleY > 0) rightPaddleY -= 4;
+        if (rightDownPressed && rightPaddleY < canvas.height - paddleHeight) rightPaddleY += 4;
+      } else {
+        if (ballY < rightPaddleY + paddleHeight / 2) rightPaddleY -= 2;
+        else rightPaddleY += 2;
+      }
+
+      if (ballY + dy > canvas.height - ballRadius || ballY + dy < ballRadius) dy = -dy;
+      if (
+        ballX + dx < 20 && ballY > paddleY && ballY < paddleY + paddleHeight ||
+        ballX + dx > canvas.width - 20 && ballY > rightPaddleY && ballY < rightPaddleY + paddleHeight
+      ) {
+        dx = -dx;
+      }
+
+      if (ballX + dx < 0 || ballX + dx > canvas.width) {
+        ballX = canvas.width / 2;
+        ballY = canvas.height / 2;
+      }
+
+      ballX += dx;
+      ballY += dy;
+
+      animation = requestAnimationFrame(draw);
+    }
+
+    document.getElementById('singlePlayerBtn').onclick = () => {
+      multiplayer = false;
+      document.getElementById('pongStartScreen').style.display = 'none';
+      canvas.style.display = 'block';
+      animation = requestAnimationFrame(draw);
+    };
+
+    document.getElementById('multiPlayerBtn').onclick = () => {
+      multiplayer = true;
+      document.getElementById('pongStartScreen').style.display = 'none';
+      canvas.style.display = 'block';
+      animation = requestAnimationFrame(draw);
+    };
+
+document.getElementById('closePong').onclick = () => {
+  cancelAnimationFrame(animation);
+  document.getElementById('pongWindow').remove();
+};
+
+  });
+})();
