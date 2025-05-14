@@ -980,3 +980,153 @@ document.getElementById('closePong').onclick = () => {
     startClickTest();
   });
 })();
+(function () {
+  const targetBtn = document.getElementById('menuBtn7');
+  if (!targetBtn) return;
+
+  targetBtn.addEventListener('click', () => {
+    if (document.getElementById('targetGameWindow')) return;
+
+    const win = document.createElement('div');
+    win.id = 'targetGameWindow';
+    win.style.cssText = `
+      position: fixed;
+      top: 150px;
+      left: 150px;
+      width: 400px;
+      height: 400px;
+      background: #111;
+      color: white;
+      border: 2px solid #333;
+      border-radius: 8px;
+      z-index: 10000;
+      font-family: sans-serif;
+      overflow: hidden;
+    `;
+
+    win.innerHTML = `
+      <div id="targetHeader" style="position: relative; padding: 10px; cursor: move; background: #222;">
+        <strong>10 Targets Game</strong>
+        <button id="closeTargetGame" style="position:absolute; right:10px; top:8px; background:#900; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">X</button>
+      </div>
+      <div id="targetContainer" style="position: relative; width: 100%; height: 320px; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <div id="difficultyMenu">
+          <p>Kies moeilijkheid:</p>
+          <button class="difficultyBtn" data-size="40">Easy</button>
+          <button class="difficultyBtn" data-size="25">Medium</button>
+          <button class="difficultyBtn" data-size="15">Hard</button>
+        </div>
+        <div id="countdown" style="font-size: 48px; display: none; margin-top: 20px;"></div>
+      </div>
+      <div id="targetResult" style="text-align:center; font-size: 18px; margin-top: 5px;"></div>
+      <div style="text-align: center; margin: 2px;">
+        <button id="targetRestart" style="display:none; padding: 6px 12px; font-size: 16px;">Opnieuw spelen</button>
+      </div>
+    `;
+    document.body.appendChild(win);
+
+    // Versleepbaar venster
+    let isDragging = false, offsetX, offsetY;
+    const header = document.getElementById('targetHeader');
+    header.addEventListener('mousedown', e => {
+      isDragging = true;
+      offsetX = e.clientX - win.offsetLeft;
+      offsetY = e.clientY - win.offsetTop;
+    });
+    document.addEventListener('mousemove', e => {
+      if (isDragging) {
+        win.style.left = e.clientX - offsetX + 'px';
+        win.style.top = e.clientY - offsetY + 'px';
+      }
+    });
+    document.addEventListener('mouseup', () => isDragging = false);
+
+    const container = document.getElementById('targetContainer');
+    const result = document.getElementById('targetResult');
+    const restartBtn = document.getElementById('targetRestart');
+    const countdown = document.getElementById('countdown');
+    const difficultyMenu = document.getElementById('difficultyMenu');
+
+    let clickCount = 0;
+    let startTime = 0;
+    let targetSize = 40;
+
+    function spawnTarget() {
+      const target = document.createElement('div');
+      target.style.cssText = `
+        position: absolute;
+        width: ${targetSize}px;
+        height: ${targetSize}px;
+        background: red;
+        border-radius: 50%;
+        cursor: pointer;
+      `;
+
+      const x = Math.floor(Math.random() * (container.clientWidth - targetSize));
+      const y = Math.floor(Math.random() * (container.clientHeight - targetSize));
+      target.style.left = `${x}px`;
+      target.style.top = `${y}px`;
+
+      target.addEventListener('click', () => {
+        target.remove();
+        clickCount++;
+
+        if (clickCount === 1) startTime = Date.now();
+
+        if (clickCount < 10) {
+          spawnTarget();
+        } else {
+          const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+          container.innerHTML = `<div style="font-size: 24px;">Je hebt 10 targets geraakt in ${totalTime} seconden!</div>`;
+          restartBtn.style.display = 'inline-block';
+        }
+      });
+
+      container.appendChild(target);
+    }
+
+    function startGame() {
+      clickCount = 0;
+      result.textContent = '';
+      restartBtn.style.display = 'none';
+      container.innerHTML = '<div id="countdown" style="font-size: 48px; margin-top: 20px;"></div>';
+      const countdownEl = document.getElementById('countdown');
+      let count = 3;
+      countdownEl.textContent = count;
+
+      const interval = setInterval(() => {
+        count--;
+        if (count === 0) {
+          clearInterval(interval);
+          container.innerHTML = '';
+          spawnTarget();
+        } else {
+          countdownEl.textContent = count;
+        }
+      }, 1000);
+    }
+
+   restartBtn.onclick = () => {
+  difficultyMenu.style.display = 'block';
+  container.innerHTML = '';
+  container.appendChild(difficultyMenu);
+  container.appendChild(countdown);
+  countdown.style.display = 'none';
+  result.textContent = '';
+  restartBtn.style.display = 'none';
+};
+
+
+    difficultyMenu.querySelectorAll('.difficultyBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        targetSize = parseInt(btn.dataset.size);
+        difficultyMenu.style.display = 'none';
+        startGame();
+      });
+    });
+
+    document.getElementById('closeTargetGame').onclick = () => {
+      document.body.removeChild(win);
+    };
+  });
+})();
