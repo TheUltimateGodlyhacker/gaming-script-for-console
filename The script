@@ -1,6 +1,6 @@
 (function () {
   if (document.getElementById('customMenu')) {
-    alert('This Menu already exists');
+    alert('Menu bestaat al!');
     return;
   }
 
@@ -31,13 +31,11 @@
       border-top-right-radius: 6px;
     }
     #customMenuButtons {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 10px;
-  gap: 5px;
-  max-height: 300px;  /* of een waarde die past bij je layout */
-  overflow-y: auto;
-}
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+      gap: 5px;
+    }
     .menuButton {
       flex: 1 0 30%;
       padding: 6px;
@@ -82,20 +80,14 @@
 
   const buttonsContainer = document.getElementById('customMenuButtons');
 
-const knopNamen = [
-  "Snake", "Tetris", "Flappy bird", "Pac man", "Reaction time",
-  "click test", "Series Memory", "10 targets", "Stop at 10 sec", "Dino game"
-  // voeg hier tot max 50 namen toe
-];
-
-for (let i = 1; i <= 50; i++) {
-  const btn = document.createElement('button');
-  btn.className = 'menuButton';
-  btn.textContent = knopNamen[i - 1] || 'Knop ' + i;  // gebruik naam of standaardtekst
-  btn.id = 'menuBtn' + i;
-  buttonsContainer.appendChild(btn);
-}
-
+  // 40 knoppen toevoegen
+  for (let i = 1; i <= 50; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'menuButton';
+    btn.textContent = 'Knop ' + i;
+    btn.id = 'menuBtn' + i;
+    buttonsContainer.appendChild(btn);
+  }
 
   // Minimaliseer/maximaliseer
   let isMinimized = false;
@@ -247,139 +239,3 @@ for (let i = 1; i <= 50; i++) {
     }, 100);
   };
 })();
-// Voeg deze JavaScript toe aan je script
-document.getElementById('startTetrisBtn').addEventListener('click', () => {
-  document.getElementById('tetrisContainer').style.display = 'block';
-  startTetrisGame();
-});
-
-function startTetrisGame() {
-  const canvas = document.getElementById('tetrisCanvas');
-  const ctx = canvas.getContext('2d');
-  const ROWS = 20;
-  const COLS = 10;
-  const BLOCK_SIZE = 30;
-  let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-  let currentPiece = null;
-  let score = 0;
-  let gameOver = false;
-
-  function drawBlock(x, y, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
-  }
-
-  function drawBoard() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    board.forEach((row, y) => {
-      row.forEach((value, x) => {
-        if (value) {
-          drawBlock(x, y, 'cyan');
-        }
-      });
-    });
-  }
-
-  function spawnPiece() {
-    currentPiece = {
-      x: 4,
-      y: 0,
-      shape: [
-        [1, 1, 1],
-        [0, 1, 0]
-      ]
-    };
-  }
-
-  function drawPiece() {
-    currentPiece.shape.forEach((row, dy) => {
-      row.forEach((value, dx) => {
-        if (value) {
-          drawBlock(currentPiece.x + dx, currentPiece.y + dy, 'red');
-        }
-      });
-    });
-  }
-
-  function movePieceDown() {
-    currentPiece.y += 1;
-    if (collision()) {
-      currentPiece.y -= 1;
-      mergePiece();
-      clearLines();
-      spawnPiece();
-      if (collision()) {
-        endGame();
-      }
-    }
-  }
-
-  function collision() {
-    return currentPiece.shape.some((row, dy) => {
-      return row.some((value, dx) => {
-        if (value) {
-          const x = currentPiece.x + dx;
-          const y = currentPiece.y + dy;
-          return (
-            x < 0 ||
-            x >= COLS ||
-            y >= ROWS ||
-            board[y] && board[y][x]
-          );
-        }
-        return false;
-      });
-    });
-  }
-
-  function mergePiece() {
-    currentPiece.shape.forEach((row, dy) => {
-      row.forEach((value, dx) => {
-        if (value) {
-          board[currentPiece.y + dy][currentPiece.x + dx] = 1;
-        }
-      });
-    });
-  }
-
-  function clearLines() {
-    let linesCleared = 0;
-    board = board.filter(row => {
-      if (row.every(cell => cell)) {
-        linesCleared += 1;
-        return false;
-      }
-      return true;
-    });
-    while (board.length < ROWS) {
-      board.unshift(Array(COLS).fill(0));
-    }
-    score += linesCleared * 10;
-  }
-
-  function endGame() {
-    gameOver = true;
-    document.getElementById('tetrisOverlay').style.display = 'block';
-    document.getElementById('finalScoreText').textContent = `Score: ${score}`;
-  }
-
-  document.getElementById('restartBtn').addEventListener('click', () => {
-    board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-    score = 0;
-    gameOver = false;
-    document.getElementById('tetrisOverlay').style.display = 'none';
-    spawnPiece();
-    gameLoop();
-  });
-
-  function gameLoop() {
-    if (gameOver) return;
-    movePieceDown();
-    drawBoard();
-    drawPiece();
-    setTimeout(gameLoop, 500);
-  }
-
-  spawnPiece();
-  gameLoop();
-}
