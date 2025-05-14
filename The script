@@ -611,3 +611,163 @@ document.getElementById('closePong').onclick = () => {
 
   });
 })();
+(function () {
+  const flappyBtn = document.getElementById('menuBtn4');
+  if (!flappyBtn) return;
+
+  flappyBtn.addEventListener('click', () => {
+    if (document.getElementById('flappyWindow')) return;
+
+    const win = document.createElement('div');
+    win.id = 'flappyWindow';
+    win.style.cssText = `
+      position: fixed;
+      top: 120px;
+      left: 120px;
+      width: 400px;
+      background: #111;
+      color: white;
+      border: 2px solid #333;
+      border-radius: 8px;
+      z-index: 10000;
+      font-family: sans-serif;
+    `;
+
+    win.innerHTML = `
+      <div id="flappyHeader" style="padding: 10px; background: #222; cursor: move;">
+        <strong>Flappy Bird</strong>
+        <button id="closeFlappy" style="float:right; background:#900; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">X</button>
+      </div>
+      <div style="padding: 10px; text-align: center;">
+        <canvas id="flappyCanvas" width="380" height="300" style="background:skyblue;"></canvas>
+        <div id="countdown" style="position:absolute; font-size:40px; color:white; top:180px; left:50%; transform:translateX(-50%);"></div>
+        <button id="restartFlappy" style="display:none; margin-top:10px; padding:6px 12px; font-size:16px;">Play again</button>
+      </div>
+    `;
+    document.body.appendChild(win);
+
+    let isDragging = false, offsetX, offsetY;
+    const header = document.getElementById('flappyHeader');
+    header.addEventListener('mousedown', e => {
+      isDragging = true;
+      offsetX = e.clientX - win.offsetLeft;
+      offsetY = e.clientY - win.offsetTop;
+    });
+    document.addEventListener('mousemove', e => {
+      if (isDragging) {
+        win.style.left = e.clientX - offsetX + 'px';
+        win.style.top = e.clientY - offsetY + 'px';
+      }
+    });
+    document.addEventListener('mouseup', () => isDragging = false);
+
+    const canvas = document.getElementById('flappyCanvas');
+    const ctx = canvas.getContext('2d');
+    const restartBtn = document.getElementById('restartFlappy');
+    const countdown = document.getElementById('countdown');
+
+    let birdY, velocity, gravity = 0.5, jump = -5;
+    let pipes = [], score, gameOver = false, animation;
+
+    function resetGame() {
+      birdY = canvas.height / 2;
+      velocity = 0;
+      pipes = [];
+      score = 0;
+      gameOver = false;
+      restartBtn.style.display = 'none';
+      countdown.style.display = 'block';
+      countdownSequence();
+    }
+
+    function countdownSequence() {
+      let timeLeft = 3;
+      countdown.textContent = timeLeft;
+      const interval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft > 0) {
+          countdown.textContent = timeLeft;
+        } else {
+          clearInterval(interval);
+          countdown.textContent = 'Start!';
+          setTimeout(() => {
+            countdown.style.display = 'none';
+            animation = requestAnimationFrame(draw);
+          }, 500);
+        }
+      }, 1000);
+    }
+
+    function drawBird() {
+      ctx.fillStyle = 'yellow';
+      ctx.beginPath();
+      ctx.arc(50, birdY, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawPipes() {
+      ctx.fillStyle = 'green';
+      pipes.forEach(p => {
+        ctx.fillRect(p.x, 0, 30, p.top);
+        ctx.fillRect(p.x, p.top + 60, 30, canvas.height - p.top - 60);
+      });
+    }
+
+    function drawScore() {
+      ctx.fillStyle = 'white';
+      ctx.font = '16px sans-serif';
+      ctx.fillText('Score: ' + score, 10, 20);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      velocity += gravity;
+      birdY += velocity;
+
+      if (pipes.length === 0 || pipes[pipes.length - 1].x < 200) {
+        const top = Math.random() * 150 + 20;
+        pipes.push({ x: canvas.width, top });
+      }
+
+      pipes.forEach(p => p.x -= 2);
+      pipes = pipes.filter(p => p.x + 30 > 0);
+
+      pipes.forEach(p => {
+        if (50 + 10 > p.x && 50 - 10 < p.x + 30 &&
+          (birdY - 10 < p.top || birdY + 10 > p.top + 60)) {
+          endGame();
+        }
+      });
+
+      if (birdY + 10 > canvas.height || birdY - 10 < 0) endGame();
+
+      drawBird();
+      drawPipes();
+      drawScore();
+
+      score++;
+      if (!gameOver) animation = requestAnimationFrame(draw);
+    }
+
+    function endGame() {
+      cancelAnimationFrame(animation);
+      gameOver = true;
+      ctx.fillStyle = 'red';
+      ctx.font = '24px sans-serif';
+      ctx.fillText('Game Over', canvas.width / 2 - 60, canvas.height / 2);
+      restartBtn.style.display = 'inline-block';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') velocity = jump;
+    });
+
+    restartBtn.onclick = resetGame;
+    document.getElementById('closeFlappy').onclick = () => {
+      cancelAnimationFrame(animation);
+      document.body.removeChild(win);
+    };
+
+    resetGame();
+  });
+})();
