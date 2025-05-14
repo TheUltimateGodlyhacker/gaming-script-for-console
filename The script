@@ -239,3 +239,211 @@
     }, 100);
   };
 })();
+(function () {
+  const tetrisBtn = document.getElementById('menuBtn2');
+  if (!tetrisBtn) {
+    console.error("Knop 'menuBtn2' niet gevonden.");
+    return;
+  }
+
+  tetrisBtn.addEventListener('click', () => {
+    if (document.getElementById('tetrisWindow')) return;
+
+    // Maak een versleepbaar venster
+    const win = document.createElement('div');
+    win.id = 'tetrisWindow';
+    win.style.cssText = `
+      position: fixed;
+      top: 120px;
+      left: 120px;
+      width: 350px;
+      background: #111;
+      color: white;
+      border: 2px solid #333;
+      border-radius: 8px;
+      z-index: 10000;
+      font-family: sans-serif;
+    `;
+
+    win.innerHTML = `
+      <div id="tetrisHeader" style="padding: 10px; background: #222; cursor: move;">
+        <strong>Tetris</strong>
+        <button id="closeTetris" style="float:right; background:#900; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">X</button>
+      </div>
+      <div id="tetrisGame" style="padding: 10px; text-align: center;">
+        <div id="startScreen">
+          <h2 style="margin:10px 0;">TETRIS</h2>
+          <button id="playTetris" style="padding: 10px 20px; font-size: 16px;">Play</button>
+        </div>
+        <canvas id="tetrisCanvas" width="200" height="400" style="display:none; background:black; border:2px solid #555;"></canvas>
+        <div id="gameOverText" style="display:none; color:red; margin-top:10px; font-weight:bold;"></div>
+      </div>
+    `;
+    document.body.appendChild(win);
+
+    // Sleepfunctionaliteit
+    let isDragging = false, offsetX, offsetY;
+    const header = document.getElementById('tetrisHeader');
+    header.addEventListener('mousedown', function (e) {
+      isDragging = true;
+      offsetX = e.clientX - win.offsetLeft;
+      offsetY = e.clientY - win.offsetTop;
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (isDragging) {
+        win.style.left = e.clientX - offsetX + 'px';
+        win.style.top = e.clientY - offsetY + 'px';
+      }
+    });
+    document.addEventListener('mouseup', function () {
+      isDragging = false;
+    });
+
+    // Sluitknop
+    document.getElementById('closeTetris').onclick = () => {
+      clearInterval(gameInterval);
+      win.remove();
+    };
+
+    const canvas = document.getElementById('tetrisCanvas');
+    const ctx = canvas.getContext('2d');
+    const playBtn = document.getElementById('playTetris');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverText = document.getElementById('gameOverText');
+
+    const COLS = 10;
+    const ROWS = 20;
+    const BLOCK_SIZE = 20;
+
+    let board = [];
+    let current;
+    let gameInterval;
+
+    const colors = ['cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red'];
+    const tetrominoes = [
+      [[1, 1, 1, 1]], // I
+      [[1, 0, 0], [1, 1, 1]], // J
+      [[0, 0, 1], [1, 1, 1]], // L
+      [[1, 1], [1, 1]], // O
+      [[0, 1, 1], [1, 1, 0]], // S
+      [[0, 1, 0], [1, 1, 1]], // T
+      [[1, 1, 0], [0, 1, 1]] // Z
+    ];
+
+    function resetBoard() {
+      board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    }
+
+    function drawCell(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+    }
+
+    function drawBoard() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          if (board[y][x]) {
+            drawCell(x, y, colors[board[y][x] - 1]);
+          }
+        }
+      }
+      if (current) {
+        for (let y = 0; y < current.shape.length; y++) {
+          for (let x = 0; x < current.shape[y].length; x++) {
+            if (current.shape[y][x]) {
+              drawCell(current.x + x, current.y + y, colors[current.type]);
+            }
+          }
+        }
+      }
+    }
+
+    function collide(x, y, shape) {
+      for (let row = 0; row < shape.length; row++) {
+        for (let col = 0; col < shape[row].length; col++) {
+          if (
+            shape[row][col] &&
+            (board[y + row] && board[y + row][x + col]) !== 0
+          ) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function merge() {
+      current.shape.forEach((row, y) => {
+        row.forEach((val, x) => {
+          if (val) board[current.y + y][current.x + x] = current.type + 1;
+        });
+      });
+    }
+
+    function rotate(shape) {
+      return shape[0].map((_, i) => shape.map(row => row[i])).reverse();
+    }
+
+    function drop() {
+      current.y++;
+      if (collide(current.x, current.y, current.shape)) {
+        current.y--;
+        merge();
+        clearRows();
+        spawn();
+        if (collide(current.x, current.y, current.shape)) {
+          gameOver();
+        }
+      }
+      drawBoard();
+    }
+
+    function clearRows() {
+      board = board.filter(row => row.some(cell => !cell));
+      while (board.length < ROWS) board.unshift(Array(COLS).fill(0));
+    }
+
+    function spawn() {
+      const type = Math.floor(Math.random() * tetrominoes.length);
+      current = {
+        x: Math.floor(COLS / 2) - 2,
+        y: 0,
+        shape: tetrominoes[type],
+        type
+      };
+    }
+
+    function gameOver() {
+      clearInterval(gameInterval);
+      gameOverText.style.display = 'block';
+      gameOverText.innerText = `GAME OVER`;
+      setTimeout(() => {
+        gameOverText.style.display = 'none';
+        canvas.style.display = 'none';
+        startScreen.style.display = 'block';
+      }, 3000);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (!current) return;
+      const key = e.key.toLowerCase();
+      if ((key === 'arrowleft' || key === 'a') && !collide(current.x - 1, current.y, current.shape)) current.x--;
+      if ((key === 'arrowright' || key === 'd') && !collide(current.x + 1, current.y, current.shape)) current.x++;
+      if (key === 'arrowdown' || key === 's') drop();
+      if (key === 'arrowup' || key === 'w') {
+        const rotated = rotate(current.shape);
+        if (!collide(current.x, current.y, rotated)) current.shape = rotated;
+      }
+      drawBoard();
+    });
+
+    playBtn.addEventListener('click', () => {
+      resetBoard();
+      spawn();
+      startScreen.style.display = 'none';
+      canvas.style.display = 'block';
+      gameInterval = setInterval(drop, 400); // Snellere val
+    });
+  });
+})();
