@@ -1130,3 +1130,81 @@ document.getElementById('closePong').onclick = () => {
     };
   });
 })();
+(function () {
+  const targetBtn = document.getElementById('menuBtn8');
+  if (!targetBtn) return;
+
+  targetBtn.addEventListener('click', () => {
+    if (document.getElementById('clickRiskWindow')) return;
+
+    const win = document.createElement('div');
+    win.id = 'clickRiskWindow';
+    win.style.cssText = `
+      position: fixed;
+      top: 150px;
+      left: 150px;
+      width: 300px;
+      height: 250px;
+      background: #222;
+      color: white;
+      border: 2px solid #444;
+      border-radius: 8px;
+      z-index: 10000;
+      font-family: sans-serif;
+      text-align: center;
+    `;
+
+    win.innerHTML = `
+      <div id="clickHeader" style="padding: 10px; background: #333; cursor: move;">
+        <strong>Click Gamble</strong>
+        <button id="closeClickRisk" style="position:absolute; right:10px; top:8px; background:#900; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">X</button>
+      </div>
+      <div style="margin-top: 30px;">
+        <button id="clickButton" style="font-size: 24px; padding: 20px 40px;">0</button>
+        <div id="riskInfo" style="margin-top: 20px;">Reset kans: 1%</div>
+      </div>
+    `;
+
+    document.body.appendChild(win);
+
+    // Versleepbaar venster
+    let isDragging = false, offsetX, offsetY;
+    const header = document.getElementById('clickHeader');
+    header.addEventListener('mousedown', e => {
+      isDragging = true;
+      offsetX = e.clientX - win.offsetLeft;
+      offsetY = e.clientY - win.offsetTop;
+    });
+    document.addEventListener('mousemove', e => {
+      if (isDragging) {
+        win.style.left = e.clientX - offsetX + 'px';
+        win.style.top = e.clientY - offsetY + 'px';
+      }
+    });
+    document.addEventListener('mouseup', () => isDragging = false);
+
+    const clickBtn = document.getElementById('clickButton');
+    const riskDisplay = document.getElementById('riskInfo');
+    let score = 0;
+    let risk = 1;
+
+    clickBtn.addEventListener('click', () => {
+      const chance = Math.random() * 100;
+      if (chance < risk) {
+        alert(`Oh no your score was reset at ${risk.toFixed(1)}% kans.`);
+        score = 0;
+        risk = 1;
+      } else {
+        score++;
+        risk += 1;
+      }
+
+      clickBtn.textContent = score;
+      riskDisplay.textContent = `Reset chance: ${Math.min(risk, 100).toFixed(1)}%`;
+    });
+
+    document.getElementById('closeClickRisk').onclick = () => {
+      document.body.removeChild(win);
+    };
+  });
+})();
