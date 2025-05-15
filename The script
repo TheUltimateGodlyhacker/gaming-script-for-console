@@ -1208,3 +1208,161 @@ document.getElementById('closePong').onclick = () => {
     };
   });
 })();
+(function () {
+  const targetBtn = document.getElementById('menuBtn9');
+  if (!targetBtn) return;
+
+  targetBtn.addEventListener('click', () => {
+    if (document.getElementById('shellGameWindow')) return;
+
+    const win = document.createElement('div');
+    win.id = 'shellGameWindow';
+    win.style.cssText = `
+      position: fixed;
+      top: 150px;
+      left: 100px;
+      width: 600px;
+      height: 400px;
+      background: #111;
+      color: white;
+      border: 2px solid #444;
+      border-radius: 8px;
+      z-index: 10000;
+      font-family: sans-serif;
+      overflow: hidden;
+      text-align: center;
+    `;
+
+    win.innerHTML = `
+      <div id="shellHeader" style="padding: 10px; background: #222; cursor: move;">
+        <strong>Shell Game</strong>
+        <button id="closeShellGame" style="position:absolute; right:10px; top:8px; background:#900; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">X</button>
+      </div>
+      <div id="shellContainer" style="height: 330px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;">
+        <div id="shellMenu">
+          <p>choose Difficulty:</p>
+          <button class="shellDiff" data-speed="1000" data-swaps="5">Easy</button>
+          <button class="shellDiff" data-speed="500" data-swaps="10">Medium</button>
+          <button class="shellDiff" data-speed="200" data-swaps="20">Hard</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(win);
+
+    let isDragging = false, offsetX, offsetY;
+    const header = document.getElementById('shellHeader');
+    header.addEventListener('mousedown', e => {
+      isDragging = true;
+      offsetX = e.clientX - win.offsetLeft;
+      offsetY = e.clientY - win.offsetTop;
+    });
+    document.addEventListener('mousemove', e => {
+      if (isDragging) {
+        win.style.left = e.clientX - offsetX + 'px';
+        win.style.top = e.clientY - offsetY + 'px';
+      }
+    });
+    document.addEventListener('mouseup', () => isDragging = false);
+
+    document.getElementById('closeShellGame').onclick = () => {
+      document.body.removeChild(win);
+    };
+
+    const container = document.getElementById('shellContainer');
+    const menu = document.getElementById('shellMenu');
+
+    function startGame(speed, swaps) {
+      menu.style.display = 'none';
+      container.innerHTML = `
+        <div id="cupsWrapper" style="position: relative; height: 100px;">
+          <div class="cupWrapper" data-index="0" style="position: absolute; left: -160px; transition: left 0.4s ease;">
+            <div class="ball" style="width: 20px; height: 20px; background: red; border-radius: 50%; position: absolute; bottom: -25px; left: 20px;"></div>
+            <div class="cup" style="width: 60px; height: 60px; background: #aaa; border-radius: 50%; cursor: pointer;"></div>
+          </div>
+          <div class="cupWrapper" data-index="1" style="position: absolute; left: 0px; transition: left 0.4s ease;">
+            <div class="ball" style="width: 20px; height: 20px; background: red; border-radius: 50%; position: absolute; bottom: -25px; left: 20px;"></div>
+            <div class="cup" style="width: 60px; height: 60px; background: #aaa; border-radius: 50%; cursor: pointer;"></div>
+          </div>
+          <div class="cupWrapper" data-index="2" style="position: absolute; left: 160px; transition: left 0.4s ease;">
+            <div class="ball" style="width: 20px; height: 20px; background: red; border-radius: 50%; position: absolute; bottom: -25px; left: 20px;"></div>
+            <div class="cup" style="width: 60px; height: 60px; background: #aaa; border-radius: 50%; cursor: pointer;"></div>
+          </div>
+        </div>
+        <div id="shellMessage" style="margin-top: 30px; font-size: 18px;">Remember where the ball is!</div>
+      `;
+
+      const wrappers = Array.from(container.querySelectorAll('.cupWrapper'));
+      const balls = container.querySelectorAll('.ball');
+      let positions = [-160, 0, 160];
+      let ballIndex = Math.floor(Math.random() * 3);
+
+      balls.forEach((ball, idx) => {
+        ball.style.display = idx === ballIndex ? 'block' : 'none';
+      });
+
+      setTimeout(() => {
+        balls.forEach(ball => ball.style.display = 'none');
+        let swapsDone = 0;
+
+        function swapCups() {
+          const [i, j] = [0, 1, 2].sort(() => 0.5 - Math.random()).slice(0, 2);
+          const tmp = positions[i];
+          positions[i] = positions[j];
+          positions[j] = tmp;
+
+          wrappers[i].style.left = positions[i] + 'px';
+          wrappers[j].style.left = positions[j] + 'px';
+
+          if (ballIndex === i) ballIndex = j;
+          else if (ballIndex === j) ballIndex = i;
+
+          swapsDone++;
+          if (swapsDone < swaps) {
+            setTimeout(swapCups, speed);
+          } else {
+            document.getElementById('shellMessage').textContent = 'Press the correct cup!';
+            enableGuessing();
+          }
+        }
+
+        swapCups();
+
+        function enableGuessing() {
+          wrappers.forEach((wrapper, idx) => {
+            wrapper.addEventListener('click', () => {
+              const msg = document.getElementById('shellMessage');
+              if (idx === ballIndex) {
+                msg.textContent = 'That is correct! 🎉';
+                wrapper.querySelector('.cup').style.background = 'green';
+              } else {
+                msg.textContent = `Wrong the ball is under cup ${ballIndex + 1}.`;
+                wrappers[ballIndex].querySelector('.cup').style.background = 'red';
+              }
+
+              const again = document.createElement('button');
+              again.textContent = 'Play again';
+              again.style.cssText = 'margin-top: 10px; padding: 8px 16px; font-size: 16px;';
+              again.onclick = () => {
+                container.innerHTML = '';
+                container.appendChild(menu);
+                menu.style.display = 'block';
+              };
+              container.appendChild(again);
+
+              wrappers.forEach(w => w.style.pointerEvents = 'none');
+            });
+          });
+        }
+      }, 1500);
+    }
+
+    document.querySelectorAll('.shellDiff').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const speed = parseInt(btn.dataset.speed);
+        const swaps = parseInt(btn.dataset.swaps);
+        startGame(speed, swaps);
+      });
+    });
+  });
+})();
